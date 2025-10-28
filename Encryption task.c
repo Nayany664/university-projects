@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
-void code(cahr *pointer)
+void code(char *pointer)
 {
     char code1[] = "abcdefghijklmnopqrstuvwxyz"; //original alphabet
     char code2[] = "bpduhijkaltxwmrzfoysvngeqc"; //encrypted alphabet
