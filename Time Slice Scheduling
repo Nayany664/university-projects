@@ -1,0 +1,92 @@
+/* run each task in order
+each task gets 1 slice
+if a task finishes early, still wait till time over */
+
+//each tasks run for delegated num of secs
+
+#include "mbed.h" 
+#include "C12832.h"
+
+C12832 lcd(p5, p7, p6, p8, p11); //known fact
+
+DigitalOut led1(LED1); //for task 1 - output
+DigitalOut led2(LED2); //for task 2 - output
+DigitalOut led3(LED3); //for task 3 - output
+
+const int TOTAL_TIME_SEC = 10; //total time for all tasks is 10 secs
+const int TIME_SLICE_MS = 3300; //each task gets 3.3 seconds and if not finished within 3.3 seconds, finish it in the next 3.3 secs
+
+int task1_remaining = 3000; //task 1 is 3 seconds long
+int task2_remaining = 2000; //task 2 is 2 seconds long
+int task3_remaining = 5000; //task 1 is 5 seconds long
+//task 3 has to finish i the 2nd time slice it gets as 5 > 3.3
+
+//initailly start at time 0 for each task 
+int t1_time = 0;
+int t2_time = 0;
+int t3_time = 0;
+
+void execute_task(DigitalOut &led, int &remaining_time, int &total_time, const char* task_name)
+//when task happening execute
+{
+    lcd.cls(); //clear LCD
+    lcd.locate(0,0); //at position (0,0)
+    lcd.printf("Time Slicing"); //output "Time Slicing" as that's the coding project
+    lcd.locate(0,10); //at position (0,10)
+    lcd.printf("%s Running", task_name); //output which task running
+
+    led = 1; //light up the corresponding LED on mbed
+
+    int slice_time = 0; //initially at 0 seconds and go up to 10
+
+    while (slice_time < TIME_SLICE_MS) //if it hasn't reached 10 seconds yet then do this
+    {
+        wait_ms(100); //wait 0.1 seconds
+        slice_time += 100; //add 0.1 seconds until you get to 10
+
+        if (remaining_time > 0) //if task not complete
+        {
+            remaining_time -= 100; //continue finishing the task 
+            total_time += 100;
+        }
+    }
+
+    led = 0; //turn off LED
+}
+
+
+int main()
+{
+    lcd.cls(); //clear LCD screen
+    lcd.locate(0,0); //at position (0,0)
+    lcd.printf("Time Slicing"); //output "Time Slicing" as that's the coding project
+
+    Timer system_timer; //to measure total execution time
+    system_timer.start(); //start timer
+
+    while (system_timer.read() < TOTAL_TIME_SEC) //run until 3.3 secs up
+    {
+        execute_task(led1, task1_remaining, t1_time, "T1"); //do task 1
+        execute_task(led2, task2_remaining, t2_time, "T2"); //do task 2
+        execute_task(led3, task3_remaining, t3_time, "T3"); //do task 3
+
+        if (task1_remaining <= 0 &&
+            task2_remaining <= 0 &&
+            task3_remaining <= 0)
+            break; //if all tasks finished early, leave the loop (break)
+    }
+
+    lcd.cls(); //clear LCD screen
+    lcd.locate(0,0); //at position (0,0)
+    lcd.printf("Executed Time (ms)"); //output "Executed Time (ms)"
+    lcd.locate(0,10); //at position (0,10)
+    lcd.printf("T1:%d T2:%d", t1_time, t2_time); //output how long it took to do tasks 1 and 2
+    lcd.locate(0,20); //at position (0,20) - (0,10) not log enough to fit all 3 tasks on
+    lcd.printf("T3:%d", t3_time); //output how long it took to do task 3
+
+    while (true) //while connected to power
+    {
+
+    }
+}
+
